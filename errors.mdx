@@ -1,0 +1,55 @@
+---
+title: Errors
+description: Error response patterns and troubleshooting.
+---
+
+Most API errors return a JSON object with an `error` string.
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+Validation errors may also include a `details` object.
+
+```json
+{
+  "error": "Invalid request",
+  "details": {
+    "fieldErrors": {
+      "content": ["Message cannot be empty"]
+    }
+  }
+}
+```
+
+## Common Status Codes
+
+| Status | Meaning | Typical Fix |
+| --- | --- | --- |
+| `400` | Invalid JSON, invalid schema, bad cursor, missing idempotency key | Check request body and required headers. |
+| `401` | Missing or invalid bearer token | Refresh the Clerk session token and retry. |
+| `404` | Task, attachment, or run not found for the current user | Confirm the ID belongs to the authenticated account. |
+| `409` | Idempotency conflict | Use a new `Idempotency-Key` for a new operation. |
+| `429` | Rate limited | Retry after a short delay. |
+| `500` | Unexpected backend or provider error | Check run details and backend logs. |
+| `503` | Required provider/storage is not configured | Check deployment environment variables. |
+
+## Tool Failures
+
+Tool failures are recorded on the run and tool invocation. Check:
+
+- `GET /api/v1/runs/{runId}` for `errorCode`, `errorMessage`, `steps`, and `toolInvocations`.
+- Trigger.dev logs for the durable worker stack trace.
+- Provider trace IDs from Magica errors when contacting provider support.
+
+## Upload Failures
+
+Uploads require Cloudflare R2 configuration. If uploads fail, verify:
+
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- File type and file size limits

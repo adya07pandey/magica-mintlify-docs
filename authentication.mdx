@@ -1,0 +1,32 @@
+---
+title: Authentication
+description: How authenticated requests work in Magica.
+---
+
+Magica uses Clerk for authentication. API requests that access user data require a bearer token from the signed-in Clerk session.
+
+## Header
+
+Send the token in the `Authorization` header:
+
+```http
+Authorization: Bearer <clerk-session-token>
+```
+
+The backend verifies the token, creates or finds the local user record, and scopes all tasks, attachments, and runs to that user.
+
+## Idempotency
+
+Mutating endpoints that start durable work require an `Idempotency-Key` header. This prevents duplicate task runs if the browser retries a request.
+
+```http
+Idempotency-Key: 7f9289f3-7c5f-49d1-a37d-e680f553c2e1
+```
+
+Use a new key for each logical operation. Reusing the same key for the same operation returns the existing run response.
+
+## Common Auth Errors
+
+- `401 Unauthorized`: missing, expired, or invalid bearer token.
+- `409 Conflict`: idempotency key belongs to a different operation or user.
+- `404 Not Found`: the requested task, attachment, or run does not belong to the authenticated user.

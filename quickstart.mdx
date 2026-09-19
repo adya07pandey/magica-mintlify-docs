@@ -1,0 +1,76 @@
+---
+title: Quickstart
+description: Create a task, attach files, and track a run.
+---
+
+This quickstart shows the core API flow used by the frontend.
+
+## 1. Check the API
+
+```bash
+curl https://magica-backend.onrender.com/api/health
+```
+
+## 2. Upload Files
+
+```bash
+curl -X POST https://magica-backend.onrender.com/api/uploads/direct \
+  -H "Authorization: Bearer $CLERK_TOKEN" \
+  -F "files=@./input.png"
+```
+
+The response includes a `taskId` and one or more attachment IDs.
+
+```json
+{
+  "taskId": "6cdc97bd-86a4-4021-8337-6a127015d801",
+  "attachments": [
+    {
+      "id": "936234ba-989e-48cd-bd92-fdd48ebb6993",
+      "filename": "input.png",
+      "mimeType": "image/png",
+      "status": "READY"
+    }
+  ]
+}
+```
+
+## 3. Send a Prompt
+
+```bash
+curl -X POST https://your-backend.vercel.app/api/tasks/6cdc97bd-86a4-4021-8337-6a127015d801 \
+  -H "Authorization: Bearer $CLERK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "content": "Crop this image to the center square.",
+    "attachments": ["936234ba-989e-48cd-bd92-fdd48ebb6993"]
+  }'
+```
+
+The response includes a `runId`.
+
+## 4. Poll or Stream Run State
+
+Poll:
+
+```bash
+curl https://your-backend.vercel.app/api/v1/runs/$RUN_ID \
+  -H "Authorization: Bearer $CLERK_TOKEN"
+```
+
+Stream:
+
+```bash
+curl -N https://your-backend.vercel.app/api/v1/runs/$RUN_ID/events \
+  -H "Authorization: Bearer $CLERK_TOKEN"
+```
+
+## 5. Read the Task
+
+```bash
+curl https://your-backend.vercel.app/api/tasks/$TASK_ID?limit=30 \
+  -H "Authorization: Bearer $CLERK_TOKEN"
+```
+
+The returned messages include assistant responses, tool outputs, and media URLs.

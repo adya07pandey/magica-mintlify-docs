@@ -1,0 +1,36 @@
+---
+title: Agent Execution
+description: How Magica turns a user message into durable tool work.
+---
+
+Magica separates request/response API work from long-running agent execution.
+
+## Components
+
+- Next.js API routes accept authenticated requests and persist task state.
+- PostgreSQL stores users, tasks, messages, attachments, runs, run steps, and tool invocations.
+- Trigger.dev runs the agent and tool jobs outside the original HTTP request.
+- OpenRouter selects and calls free models with tool schemas.
+- Magica executes media operations such as image generation, cropping, and video merging.
+- Cloudflare R2 stores uploaded and generated assets.
+
+## Execution Flow
+
+1. The user sends a prompt through the frontend.
+2. The backend validates the request, creates a message, creates an `AgentRun`, and dispatches Trigger.dev.
+3. The agent loads task context and asks OpenRouter for the next step.
+4. If the model requests a tool, Magica validates input, starts a provider run, and polls until completion.
+5. The normalized tool output is stored on the run and surfaced to the frontend.
+6. The agent writes the final assistant message.
+7. The frontend receives realtime progress through Server-Sent Events.
+
+## Why Durable Runs
+
+Media providers can take tens of seconds or longer. Durable runs keep the system reliable when:
+
+- A browser tab refreshes.
+- A network request times out.
+- A provider job needs polling.
+- A tool call fails and needs structured error reporting.
+
+This keeps the user-facing API fast while preserving full run history for debugging and replay.

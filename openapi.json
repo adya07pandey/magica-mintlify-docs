@@ -1,0 +1,1270 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Magica Public API",
+    "version": "1.0.0",
+    "description": "Public API for Magica tasks, attachments, runs, waitpoints, and media tool workflows."
+  },
+  "servers": [
+    {
+      "url": "https://magica-backend.onrender.com",
+      "description": "Production"
+    },
+    {
+      "url": "http://127.0.0.1:3000",
+      "description": "Local development"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["System"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Backend is healthy"
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "summary": "Get current user",
+        "tags": ["Users"],
+        "responses": {
+          "200": {
+            "description": "Authenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "summary": "List tasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "favorite",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create task and start an agent run",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task and run created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}": {
+      "get": {
+        "summary": "Get task detail",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "summary": "Send a message to an existing task",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message accepted and run queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update task metadata",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task": {
+                      "$ref": "#/components/schemas/TaskSummary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a task",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/fork": {
+      "post": {
+        "summary": "Fork a task from a message",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["messageId"],
+                "properties": {
+                  "messageId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Forked task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task": {
+                      "$ref": "#/components/schemas/TaskSummary"
+                    },
+                    "copiedMessages": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/stop": {
+      "post": {
+        "summary": "Stop the active run for a task",
+        "tags": ["Runs"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stop requested"
+          }
+        }
+      }
+    },
+    "/api/uploads/direct": {
+      "post": {
+        "summary": "Upload attachments directly",
+        "tags": ["Attachments"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["files"],
+                "properties": {
+                  "taskId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Uploaded attachments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectUploadResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attachments": {
+      "get": {
+        "summary": "List user attachments",
+        "tags": ["Attachments"],
+        "responses": {
+          "200": {
+            "description": "Attachment list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "attachments": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attachments/{attachmentId}": {
+      "get": {
+        "summary": "Download or redirect to attachment asset",
+        "tags": ["Attachments"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AttachmentId"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Redirect to asset URL"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "summary": "Select an attachment for a task",
+        "tags": ["Attachments"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AttachmentId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "taskId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Selected attachment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectAttachmentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an attachment",
+        "tags": ["Attachments"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AttachmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment deleted"
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{runId}": {
+      "get": {
+        "summary": "Get run detail",
+        "tags": ["Runs"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Run detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "run": {
+                      "$ref": "#/components/schemas/Run"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{runId}/events": {
+      "get": {
+        "summary": "Subscribe to run events",
+        "tags": ["Runs"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events stream with run snapshots",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/waitpoints/{token}": {
+      "post": {
+        "summary": "Resolve a human approval waitpoint",
+        "tags": ["Runs"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["decision"],
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": ["approve", "reject"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Waitpoint resolved"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/completions": {
+      "post": {
+        "summary": "OpenAI-compatible chat completion proxy",
+        "tags": ["Compatibility"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Model response"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/magica/{toolName}": {
+      "post": {
+        "summary": "Invoke a Magica tool directly",
+        "tags": ["Tools"],
+        "parameters": [
+          {
+            "name": "toolName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["gpt_image_2", "crop_image", "merge_videos"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GptImage2Input"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CropImageInput"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MergeVideosInput"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tool output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GptImage2Output"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CropImageOutput"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MergeVideosOutput"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Unique key used to make message and waitpoint operations safe to retry."
+      },
+      "TaskId": {
+        "name": "taskId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "AttachmentId": {
+        "name": "attachmentId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RunId": {
+        "name": "runId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid bearer token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "clerkUserId": {
+            "type": "string"
+          },
+          "name": {
+            "type": ["string", "null"]
+          },
+          "email": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "TaskSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "parentTaskId": {
+            "type": ["string", "null"]
+          },
+          "forkedFromMessageId": {
+            "type": ["string", "null"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "TasksResponse": {
+        "type": "object",
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PROCESSING", "READY", "FAILED"]
+          },
+          "url": {
+            "type": ["string", "null"],
+            "format": "uri"
+          },
+          "sizeBytes": {
+            "type": ["string", "number"]
+          },
+          "position": {
+            "type": "integer"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["USER", "ASSISTANT", "SYSTEM", "TOOL"]
+          },
+          "status": {
+            "type": "string"
+          },
+          "contentBlocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RunStep": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stepNumber": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": ["integer", "null"]
+          },
+          "output": {
+            "type": ["object", "array", "string", "number", "boolean", "null"]
+          },
+          "errorMessage": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ToolInvocation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "toolName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": ["integer", "null"]
+          },
+          "creditsUsed": {
+            "type": ["string", "number", "null"]
+          },
+          "output": {
+            "type": ["object", "array", "string", "number", "boolean", "null"]
+          }
+        }
+      },
+      "Run": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "modelRoute": {
+            "type": "string"
+          },
+          "actualModel": {
+            "type": ["string", "null"]
+          },
+          "stepCount": {
+            "type": "integer"
+          },
+          "errorCode": {
+            "type": ["string", "null"]
+          },
+          "errorMessage": {
+            "type": ["string", "null"]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunStep"
+            }
+          },
+          "toolInvocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolInvocation"
+            }
+          }
+        }
+      },
+      "TaskDetailResponse": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskSummary"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "activeRun": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Run"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pendingAttachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32000
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "default": []
+          }
+        }
+      },
+      "SendMessageResponse": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "existing": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateTaskRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "isFavorite": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DirectUploadResponse": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          }
+        }
+      },
+      "SelectAttachmentResponse": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment": {
+            "$ref": "#/components/schemas/Attachment"
+          }
+        }
+      },
+      "GptImage2Input": {
+        "type": "object",
+        "required": ["prompt"],
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "size": {
+            "type": "string",
+            "enum": ["Auto", "1024x1024", "1536x1024", "1024x1536", "2048x2048", "2048x1152", "3840x2160", "2160x3840"],
+            "default": "Auto"
+          },
+          "quality": {
+            "type": "string",
+            "enum": ["Low", "Medium", "High"],
+            "default": "Low"
+          },
+          "background": {
+            "type": "string",
+            "enum": ["Auto", "Transparent", "Opaque"],
+            "default": "Auto"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 1
+          },
+          "output_format": {
+            "type": "string",
+            "enum": ["PNG", "JPEG", "WEBP"],
+            "default": "PNG"
+          }
+        }
+      },
+      "GptImage2Output": {
+        "type": "object",
+        "properties": {
+          "providerRunId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProviderStatus"
+          },
+          "image_urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "creditUsed": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "CropImageInput": {
+        "type": "object",
+        "required": ["image_url"],
+        "properties": {
+          "image_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "x_percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0
+          },
+          "y_percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0
+          },
+          "width_percent": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "default": 100
+          },
+          "height_percent": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "default": 100
+          },
+          "width_px": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "height_px": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "x_px": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "y_px": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CropImageOutput": {
+        "type": "object",
+        "properties": {
+          "providerRunId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProviderStatus"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "creditUsed": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "MergeVideosInput": {
+        "type": "object",
+        "required": ["video_urls"],
+        "properties": {
+          "video_urls": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "transition": {
+            "type": "string",
+            "enum": ["none", "fade", "dissolve"],
+            "default": "none"
+          }
+        }
+      },
+      "MergeVideosOutput": {
+        "type": "object",
+        "properties": {
+          "providerRunId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProviderStatus"
+          },
+          "video_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "creditUsed": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ProviderStatus": {
+        "type": "string",
+        "enum": ["QUEUED", "RUNNING", "COMPLETED", "FAILED"]
+      }
+    }
+  }
+}

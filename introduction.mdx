@@ -1,0 +1,41 @@
+---
+title: Introduction
+description: Public API documentation for Magica.
+---
+
+Magica is an agent chat application for AI media workflows. Users can create tasks, upload assets, and ask an agent to generate, crop, or merge media using tools such as `gpt_image_2`, `crop_image`, and `merge_videos`.
+
+The public API is used by the Magica frontend and can also be called directly by authenticated clients.
+
+## Base URL
+
+Use your deployed backend URL in production:
+
+```txt
+https://magica-backend.onrender.com
+```
+
+For local development:
+
+```txt
+http://127.0.0.1:3000
+```
+
+## Core Resources
+
+- Tasks: conversations that contain user prompts, assistant responses, attachments, and run state.
+- Messages: user, assistant, system, or tool messages attached to a task.
+- Attachments: uploaded images, videos, audio, and documents stored in Cloudflare R2.
+- Runs: durable agent executions dispatched through Trigger.dev.
+- Tools: model-callable media actions backed by Magica and local validation.
+
+## Main Workflow
+
+1. Upload files with `POST /api/uploads/direct`.
+2. Create a task with `POST /api/tasks`, or send a message to an existing task with `POST /api/tasks/{taskId}`.
+3. Track the returned `runId` with `GET /api/v1/runs/{runId}` or `GET /api/v1/runs/{runId}/events`.
+4. Read task messages and generated assets with `GET /api/tasks/{taskId}`.
+
+## Submission Notes
+
+Before submitting, replace placeholder URLs in the README files and this docs project with the final GitHub, Vercel, Mintlify, and demo video links.

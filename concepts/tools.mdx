@@ -1,0 +1,95 @@
+---
+title: Tools
+description: Media tools available to the Magica agent.
+---
+
+Tools are model-callable actions with explicit Zod schemas, backend validation, provider adapters, and normalized outputs.
+
+## gpt_image_2
+
+Generates one or more images from a text prompt.
+
+Input:
+
+```json
+{
+  "prompt": "A cinematic product photo of a glass perfume bottle",
+  "size": "1024x1024",
+  "quality": "Low",
+  "background": "Auto",
+  "n": 1,
+  "output_format": "PNG"
+}
+```
+
+Output:
+
+```json
+{
+  "providerRunId": "cmu8fjru5000hlb04p71wsse2",
+  "status": "COMPLETED",
+  "image_urls": ["https://.../image.png"]
+}
+```
+
+## crop_image
+
+Crops an image by percent coordinates, pixel coordinates, or a mix of crop origin and output size.
+
+Input:
+
+```json
+{
+  "image_url": "https://.../input.png",
+  "x_percent": 25,
+  "y_percent": 25,
+  "width_percent": 50,
+  "height_percent": 50
+}
+```
+
+Output:
+
+```json
+{
+  "providerRunId": "cmu8fwt88001plb040g3hxabi",
+  "status": "COMPLETED",
+  "image_url": "https://.../cropped.png"
+}
+```
+
+## merge_videos
+
+Merges two or more videos and returns a final video URL.
+
+Input:
+
+```json
+{
+  "video_urls": [
+    "https://.../first.mp4",
+    "https://.../second.mp4"
+  ],
+  "transition": "none"
+}
+```
+
+Output:
+
+```json
+{
+  "providerRunId": "cmu8fwt88001plb040g3hxabi",
+  "status": "COMPLETED",
+  "video_url": "https://.../merged.mp4"
+}
+```
+
+## Tool Safety
+
+Each tool has:
+
+- A strict input schema.
+- Provider-specific request normalization.
+- Polling and completion handling.
+- Output normalization so the frontend can render generated assets consistently.
+- Error capture on the run and tool invocation records.

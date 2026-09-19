@@ -1,0 +1,36 @@
+---
+title: Webhooks
+description: Optional outbound notifications for run and tool events.
+---
+
+Magica supports optional webhook configuration for integrations that need run or tool notifications outside the frontend.
+
+## Environment Variables
+
+```env
+WEBHOOK_URL="https://example.com/magica/webhook"
+WEBHOOK_SECRET="replace-with-a-shared-secret"
+```
+
+When configured, the backend can send event payloads to the target URL. Keep the secret private and rotate it if a deployment environment is shared.
+
+## Recommended Receiver Behavior
+
+- Verify the webhook signature or shared secret.
+- Treat payload delivery as at-least-once.
+- Use event IDs or run IDs for deduplication.
+- Return a 2xx response quickly.
+- Move slow follow-up work into your own queue.
+
+## Common Events
+
+Typical webhook consumers care about:
+
+- Run queued
+- Run running
+- Tool started
+- Tool completed
+- Run completed
+- Run failed
+
+For frontend realtime updates, prefer `GET /api/v1/runs/{runId}/events`; webhooks are intended for server-to-server integrations.

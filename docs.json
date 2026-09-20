@@ -25,6 +25,7 @@
             "pages": [
               "architecture/agent-execution",
               "concepts/tools",
+              "concepts/human-input",
               "webhooks",
               "errors"
             ]

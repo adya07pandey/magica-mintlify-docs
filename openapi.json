@@ -536,7 +536,7 @@
     },
     "/api/v1/waitpoints/{token}": {
       "post": {
-        "summary": "Resolve a human approval waitpoint",
+        "summary": "Resolve a human-input waitpoint",
         "tags": ["Runs"],
         "parameters": [
           {
@@ -557,13 +557,45 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["decision"],
+                "required": ["resolution"],
                 "properties": {
-                  "decision": {
-                    "type": "string",
-                    "enum": ["approve", "reject"]
+                  "resolution": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": ["kind", "decision"],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "approval"
+                          },
+                          "decision": {
+                            "type": "string",
+                            "enum": ["approve", "reject"]
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": ["kind", "optionId"],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "option"
+                          },
+                          "optionId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }

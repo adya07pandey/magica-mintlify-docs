@@ -19,10 +19,11 @@ Magica separates request/response API work from long-running agent execution.
 1. The user sends a prompt through the frontend.
 2. The backend validates the request, creates a message, creates an `AgentRun`, and dispatches Trigger.dev.
 3. The agent loads task context and asks OpenRouter for the next step.
-4. If the model requests a tool, Magica validates input, starts a provider run, and polls until completion.
-5. The normalized tool output is stored on the run and surfaced to the frontend.
-6. The agent writes the final assistant message.
-7. The frontend receives realtime progress through Server-Sent Events.
+4. If a material ambiguity or high-impact decision requires user input, Magica persists a waitpoint and pauses the Trigger.dev task until the authenticated user resolves it or it expires.
+5. If the model requests a media tool, Magica validates input, reserves credits, starts a provider run, and polls until completion.
+6. Magica settles the actual tool cost idempotently and stores the normalized output on the run.
+7. The agent writes the final assistant message using Markdown where structured prose is useful.
+8. The frontend receives realtime progress through Server-Sent Events. It renders tool activity in a collapsed **Steps** disclosure instead of displaying raw tool JSON.
 
 ## Why Durable Runs
 
@@ -31,6 +32,7 @@ Media providers can take tens of seconds or longer. Durable runs keep the system
 - A browser tab refreshes.
 - A network request times out.
 - A provider job needs polling.
+- A run pauses for a user decision and resumes after a refresh or reconnect.
 - A tool call fails and needs structured error reporting.
 
 This keeps the user-facing API fast while preserving full run history for debugging and replay.

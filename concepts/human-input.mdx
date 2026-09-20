@@ -1,0 +1,62 @@
+---
+title: Human Input
+description: Pause an agent run for an important approval or option choice.
+---
+
+Magica uses durable waitpoints when continuing would require an irreversible action, resolve a material ambiguity, or make a genuinely high-impact choice. Small doubts, cosmetic preferences, ordinary defaults, and missing files or URLs do not create waitpoints.
+
+## Lifecycle
+
+1. The backend persists a `PENDING` waitpoint with its typed request, expiry, ownership, and idempotency identity.
+2. A Trigger.dev waitpoint token is created and stored against the database record.
+3. The agent run moves to `WAITING`, and the durable task pauses.
+4. The frontend reads the pending waitpoint through `GET /api/v1/runs/{runId}` and presents approval buttons or two to four options.
+5. The authenticated user submits one resolution to `POST /api/v1/waitpoints/{token}`.
+6. The backend validates ownership, expiry, and response shape, atomically changes `PENDING` to `RESOLVED`, and resumes the durable task.
+7. On resume, the worker re-reads the stored resolution before continuing.
+
+PostgreSQL is canonical. Trigger token completion is not exposed as a general frontend API, and Trigger secret keys must never be sent to the browser.
+
+## Resolve an Approval
+
+```bash
+curl -X POST https://your-backend.vercel.app/api/v1/waitpoints/$TOKEN \
+  -H "Authorization: Bearer $CLERK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "resolution": {
+      "kind": "approval",
+      "decision": "approve"
+    }
+  }'
+```
+
+The approval decision is either `approve` or `reject`.
+
+## Select an Option
+
+Use an option ID from the waitpoint request. The backend rejects IDs that are not part of the stored request.
+
+```bash
+curl -X POST https://your-backend.vercel.app/api/v1/waitpoints/$TOKEN \
+  -H "Authorization: Bearer $CLERK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "resolution": {
+      "kind": "option",
+      "optionId": "video-to-exclude"
+    }
+  }'
+```
+
+## Retries And Expiry
+
+- Reuse the same `Idempotency-Key` when retrying the same resolution request.
+- Only the owner of the run can resolve its waitpoint.
+- A waitpoint accepts the `PENDING` to `RESOLVED` transition once. Duplicate completion is safe and does not resume the run twice.
+- Expired waitpoints cannot be resolved. The backend marks them `EXPIRED`, and the run handles the timeout without executing an ambiguous tool call.
+- Refreshing or reconnecting is safe because the pending request and accepted resolution are persisted.
+
+Credit reservation and settlement do not create a second waitpoint when actual tool cost differs from the estimate.

@@ -73,4 +73,6 @@ curl https://your-backend.vercel.app/api/tasks/$TASK_ID?limit=30 \
   -H "Authorization: Bearer $CLERK_TOKEN"
 ```
 
-The returned messages include assistant responses, tool outputs, and media URLs.
+The returned messages include assistant responses, structured tool-call and tool-result content blocks, and generated media URLs. The Magica frontend presents these blocks as a collapsed **Steps** section and renders assistant text as Markdown; API consumers still receive the underlying JSON.
+
+If the run status is `WAITING`, inspect `GET /api/v1/runs/{runId}` for a pending waitpoint and resolve it through `POST /api/v1/waitpoints/{token}`. See [Human Input](/concepts/human-input) for the resolution payloads and retry behavior.

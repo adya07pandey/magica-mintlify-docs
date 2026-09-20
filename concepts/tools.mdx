@@ -93,3 +93,9 @@ Each tool has:
 - Polling and completion handling.
 - Output normalization so the frontend can render generated assets consistently.
 - Error capture on the run and tool invocation records.
+
+## Frontend Presentation
+
+Tool inputs and outputs remain structured JSON in the API and database. In the Magica chat interface, calls and results are grouped into a collapsed **Steps** disclosure. Users can expand it to inspect readable field labels, selected options, filenames, statuses, and per-tool credit usage without exposing long signed URLs or raw JSON syntax.
+
+Generated images and videos remain visible in the conversation outside the collapsed technical details. Normal assistant text is rendered as Markdown, including headings, lists, links, code, and tables.
